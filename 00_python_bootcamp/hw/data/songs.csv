@@ -1,0 +1,97 @@
+title,artist,genre,year,weeks_on_chart,peak_position,streams_millions
+Old Town Road,Lil Nas X,Hip-Hop,2019,52,1,1820.0
+Bad Guy,Billie Eilish,Pop,2019,38,1,1150.0
+Blinding Lights,The Weeknd,Pop,2019,57,1,2100.0
+7 Rings,Ariana Grande,Pop,2019,20,1,920.0
+Thank U Next,Ariana Grande,Pop,2019,16,1,860.0
+Sunflower,Post Malone,Hip-Hop,2019,34,1,1080.0
+Circles,Post Malone,Hip-Hop,2019,39,1,760.0
+Senorita,Shawn Mendes,Latin,2019,18,1,640.0
+Someone You Loved,Lewis Capaldi,Pop,2019,25,1,540.0
+Lover,Taylor Swift,Country,2019,12,2,580.0
+Dance Monkey,Tones and I,Pop,2019,22,1,670.0
+Without Me,Halsey,Pop,2019,20,2,490.0
+High Hopes,Panic At The Disco,Rock,2019,18,4,340.0
+Con Calma,Daddy Yankee,Latin,2019,14,3,430.0
+Good as Hell,Lizzo,R&B,2019,12,3,390.0
+Truth Hurts,Lizzo,R&B,2019,28,1,720.0
+Rockstar,DaBaby,Hip-Hop,2020,20,1,810.0
+Watermelon Sugar,Harry Styles,Pop,2020,20,1,760.0
+Dynamite,BTS,Pop,2020,18,1,710.0
+WAP,Cardi B,Hip-Hop,2020,12,1,780.0
+The Box,Roddy Ricch,Hip-Hop,2020,18,1,620.0
+Mood,24kGoldn,Hip-Hop,2020,20,1,690.0
+Cardigan,Taylor Swift,Country,2020,16,1,710.0
+Savage,Megan Thee Stallion,Hip-Hop,2020,15,1,660.0
+positions,Ariana Grande,Pop,2020,12,1,600.0
+Adore You,Harry Styles,Pop,2020,14,6,410.0
+Be Kind,Marshmello,Electronic,2020,10,10,300.0
+Life Is Good,Future,Hip-Hop,2020,12,2,510.0
+Intentions,Justin Bieber,Pop,2020,8,1,450.0
+Death Bed,Powfu,Electronic,2020,16,23,380.0
+Levitating,Dua Lipa,Pop,2021,47,1,1430.0
+Good 4 U,Olivia Rodrigo,Pop,2021,18,1,950.0
+Peaches,Justin Bieber,R&B,2021,20,1,780.0
+Montero,Lil Nas X,Hip-Hop,2021,24,1,860.0
+Leave The Door Open,Bruno Mars,R&B,2021,22,1,810.0
+Save Your Tears,The Weeknd,Pop,2021,34,1,1100.0
+Drivers License,Olivia Rodrigo,Pop,2021,16,1,890.0
+Industry Baby,Lil Nas X,Hip-Hop,2021,18,1,740.0
+Butter,BTS,Pop,2021,15,1,680.0
+Kiss Me More,Doja Cat,R&B,2021,20,3,620.0
+Easy On Me,Adele,Pop,2022,22,1,1280.0
+As It Was,Harry Styles,Pop,2022,40,1,1650.0
+About Damn Time,Lizzo,R&B,2022,20,1,750.0
+Heat Waves,Glass Animals,Rock,2022,55,4,1200.0
+Bad Habit,Steve Lacy,R&B,2022,22,1,680.0
+Anti-Hero,Taylor Swift,Pop,2022,36,1,1400.0
+Running Up That Hill,Kate Bush,Rock,2022,20,3,820.0
+Unholy,Sam Smith,Pop,2022,16,1,690.0
+Lavender Haze,Taylor Swift,Pop,2022,18,1,720.0
+Vegas,Doja Cat,Hip-Hop,2022,12,4,480.0
+Flowers,Miley Cyrus,Pop,2023,22,1,1180.0
+Cruel Summer,Taylor Swift,Country,2023,52,1,1750.0
+Vampire,Olivia Rodrigo,Pop,2023,16,1,920.0
+Kill Bill,SZA,R&B,2023,24,1,860.0
+Shakira Bzrp,Bizarrap,Latin,2023,12,9,530.0
+Ella Baila Sola,Eslabon Armado,Latin,2023,28,4,780.0
+Midnight Rain,Taylor Swift,Country,2023,14,5,540.0
+Rich Flex,Drake,Hip-Hop,2023,20,1,840.0
+Die For You,The Weeknd,R&B,2023,18,1,780.0
+Boy's A Liar,PinkPantheress,Electronic,2023,14,3,490.0
+Calm Down,Rema,Afrobeats,2023,30,3,950.0
+Escapism,Raye,R&B,2023,16,5,420.0
+Golden Hour,JVKE,Pop,2023,22,7,560.0
+What Was I Made For,Billie Eilish,Pop,2023,18,1,810.0
+Lovin On Me,Jack Harlow,Hip-Hop,2023,14,1,620.0
+Espresso,Sabrina Carpenter,Pop,2024,28,1,1320.0
+Not Like Us,Kendrick Lamar,Hip-Hop,2024,20,1,980.0
+Please Please Please,Sabrina Carpenter,Pop,2024,22,1,1100.0
+Beautiful Things,Benson Boone,Pop,2024,24,1,1050.0
+Too Sweet,Hozier,Rock,2024,20,1,870.0
+Lose Control,Teddy Swims,R&B,2024,28,1,830.0
+Fortnight,Taylor Swift,Country,2024,16,1,860.0
+BIRDS OF A FEATHER,Billie Eilish,Pop,2024,18,2,790.0
+Die With A Smile,Lady Gaga,Pop,2024,16,1,760.0
+luther,Kendrick Lamar,Hip-Hop,2024,14,1,720.0
+whoops,Gracie Abrams,Pop,2024,10,7,340.0
+A Bar Song,Shaboozey,Country,2024,36,1,1280.0
+Good Luck Babe,Chappell Roan,Pop,2024,20,4,820.0
+Hot To Go,Chappell Roan,Pop,2024,16,6,640.0
+Pink Pony Club,Chappell Roan,Pop,2024,14,8,510.0
+Stargazing,Myles Smith,Pop,2024,18,3,620.0
+That's So True,Gracie Abrams,Pop,2024,12,6,480.0
+3:15,Remi Wolf,Electronic,2024,8,22,240.0
+I Had Some Help,Post Malone,Country,2024,20,1,900.0
+We Can't Be Friends,Ariana Grande,Pop,2024,14,2,810.0
+The Door,Teddy Swims,R&B,2024,12,4,450.0
+Saturn,SZA,R&B,2024,16,3,560.0
+Pink Pony Club - Live,Chappell Roan,Pop,2024,10,15,320.0
+Lunch,Billie Eilish,Pop,2024,12,5,490.0
+Now And Then,The Beatles,Rock,2024,10,2,580.0
+Sticky,Tyler The Creator,Hip-Hop,2024,10,9,380.0
+Sois pas timide,Aya Nakamura,Pop,2024,8,18,280.0
+Slow It Down,Benson Boone,Pop,2024,10,12,350.0
+Tar,Bad Bunny,Latin,2024,14,6,620.0
+Baile Inolvidable,Bad Bunny,Latin,2024,12,8,510.0
+Tu Falta De Querer,Mon Laferte,Latin,2024,10,14,340.0
