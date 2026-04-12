@@ -23,7 +23,7 @@ def flatten(nested: list[list]) -> list:
         >>> flatten([])
         []
     """
-    raise NotImplementedError("Implement flatten()")
+    return sum(nested, [])
 
 
 def most_frequent(items: list) -> object:
