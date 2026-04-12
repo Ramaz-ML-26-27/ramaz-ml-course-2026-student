@@ -85,7 +85,11 @@ Use the printed output to answer the five questions in `writeup.md`.
 ## Tips
 
 - Work through the sections in order — later problems sometimes build on earlier ones.
-- After each function, run `uv run pytest -k TestFunctionName` to test just that function.
+- **Test one function at a time** — don't wait until everything is done:
+  ```bash
+  uv run pytest -k TestFlatten          # just the flatten tests
+  uv run pytest -k TestSlidingWindow    # just the sliding_window tests
+  ```
 - The test failure messages are designed to tell you exactly what went wrong — read them.
 - If you're stuck on `analysis.py`, check the pandas docs for `groupby`, `nlargest`, and `idxmax`.
 
