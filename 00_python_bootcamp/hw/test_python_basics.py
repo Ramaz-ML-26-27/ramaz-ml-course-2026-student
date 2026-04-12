@@ -27,6 +27,7 @@ from python_basics import (
     rotate,
     run_length_encode,
     running_average,
+    sliding_window,
     two_sum,
 )
 
@@ -203,6 +204,43 @@ class TestRunLengthEncode:
         result = run_length_encode(["x", "y", "x", "y"])
         assert result == [(1, "x"), (1, "y"), (1, "x"), (1, "y")], (
             f"Alternating: each run has length 1; got {result}"
+        )
+
+
+@pytest.mark.lists
+class TestSlidingWindow:
+    def test_basic(self) -> None:
+        result = sliding_window([1, 2, 3, 4, 5], 3)
+        assert result == [[1, 2, 3], [2, 3, 4], [3, 4, 5]], (
+            f"Expected [[1,2,3],[2,3,4],[3,4,5]]; got {result}"
+        )
+
+    def test_size_two(self) -> None:
+        result = sliding_window([1, 2, 3], 2)
+        assert result == [[1, 2], [2, 3]], (
+            f"Expected [[1,2],[2,3]]; got {result}"
+        )
+
+    def test_size_larger_than_list(self) -> None:
+        result = sliding_window([1, 2], 3)
+        assert result == [], (
+            f"size > len(items): expected []; got {result}"
+        )
+
+    def test_empty(self) -> None:
+        result = sliding_window([], 2)
+        assert result == [], f"Empty list: expected []; got {result}"
+
+    def test_exact_fit(self) -> None:
+        result = sliding_window([1, 2, 3], 3)
+        assert result == [[1, 2, 3]], (
+            f"Window fills entire list: expected [[1,2,3]]; got {result}"
+        )
+
+    def test_window_count(self) -> None:
+        result = sliding_window(list(range(10)), 4)
+        assert len(result) == 7, (
+            f"10 items, window size 4 → 7 windows; got {len(result)}"
         )
 
 

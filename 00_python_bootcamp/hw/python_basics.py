@@ -104,6 +104,25 @@ def run_length_encode(items: list) -> list[tuple]:
     pass
 
 
+def sliding_window(items: list, size: int) -> list[list]:
+    """Return all consecutive windows of length size.
+
+    Each window overlaps with the previous one by size-1 elements.
+    If len(items) < size, return [].
+
+    Examples:
+        >>> sliding_window([1, 2, 3, 4, 5], 3)
+        [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
+        >>> sliding_window([1, 2, 3], 2)
+        [[1, 2], [2, 3]]
+        >>> sliding_window([1, 2], 3)
+        []
+        >>> sliding_window([], 2)
+        []
+    """
+    pass
+
+
 # ── Part 2: Dictionaries ──────────────────────────────────────────────────────
 
 

@@ -22,13 +22,14 @@ from pathlib import Path
 
 # Points per test class. Every test in a class must pass to earn credit.
 POINTS: dict[str, int] = {
-    # Part 1: Lists (14 pts)
+    # Part 1: Lists (17 pts)
     "TestFlatten": 2,
     "TestMostFrequent": 2,
     "TestRunningAverage": 3,
     "TestChunk": 2,
     "TestRotate": 2,
     "TestRunLengthEncode": 3,
+    "TestSlidingWindow": 3,
     # Part 2: Dicts (13 pts)
     "TestCountOccurrences": 2,
     "TestInvertDict": 1,
@@ -64,6 +65,7 @@ SECTIONS: list[tuple[str, list[str]]] = [
             "TestChunk",
             "TestRotate",
             "TestRunLengthEncode",
+            "TestSlidingWindow",
         ],
     ),
     (
