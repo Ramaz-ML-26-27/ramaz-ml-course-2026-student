@@ -18,7 +18,12 @@ A **vector** $v \in \mathbb{R}^n$ is an ordered list of $n$ real numbers.
 $v \in \mathbb{R}^n$ means $v$ has $n$ entries, each a real number.
 
 $$
-v = \begin{bmatrix} v_1 \\ v_2 \\ \vdots \\ v_n \end{bmatrix}
+\begin{bmatrix}
+  v_1 \\
+  v_2 \\
+  \vdots \\
+  v_n
+\end{bmatrix}
 $$
 
 | Operation | Formula | Intuition |
@@ -70,7 +75,17 @@ Flipping rows and columns: the $(i,j)$ entry of $A^\top$ equals the $(j,i)$ entr
 
 $$(A^\top)_{ij} = A_{ji}$$
 
-$$\begin{bmatrix} 0 & 4 \\ 7 & 0 \\ 3 & 1 \end{bmatrix}^\top = \begin{bmatrix} 0 & 7 & 3 \\ 4 & 0 & 1 \end{bmatrix}$$
+$$
+\begin{bmatrix}
+  0 & 4 \\
+  7 & 0 \\
+  3 & 1
+\end{bmatrix}^\top
+= \begin{bmatrix}
+  0 & 7 & 3 \\
+  4 & 0 & 1
+\end{bmatrix}
+$$
 
 ### Matrix-vector multiply
 
@@ -102,11 +117,21 @@ $$(AB)_{ij} = \sum_{k=1}^n A_{ik} B_{kj}$$
 
 To rotate a 2D vector counterclockwise by angle $\theta$:
 
-$$R(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$$
+$$
+R(\theta) = \begin{bmatrix}
+  \cos\theta & -\sin\theta \\
+  \sin\theta & \cos\theta
+\end{bmatrix}
+$$
 
 Check: $R(0) = I$ (identity). For $\theta = 90^\circ$:
 
-$$R(90^\circ) = \begin{bmatrix} 0 & -1 \\ 1 & 0 \end{bmatrix}$$
+$$
+R(90^\circ) = \begin{bmatrix}
+  0 & -1 \\
+  1 & 0
+\end{bmatrix}
+$$
 
 ---
 
