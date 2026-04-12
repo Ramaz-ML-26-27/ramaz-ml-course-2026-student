@@ -1,0 +1,31 @@
+[project]
+name = "hw01-linear-algebra"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["torch>=2.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-json-report>=1.5",
+    "pytest-timeout>=2.3",
+    "ruff>=0.4",
+    "ty>=0.0.1a0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+markers = [
+    "scratch: pure Python linear algebra (no torch)",
+    "pytorch: PyTorch tensor operations",
+]
+addopts = "-v --tb=short --strict-markers"
+timeout = 30
