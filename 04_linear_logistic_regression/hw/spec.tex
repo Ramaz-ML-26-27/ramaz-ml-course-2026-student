@@ -1,0 +1,550 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+% Code style
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codebg}{RGB}{245,245,247}
+\lstdefinestyle{py}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0pt,
+  rulecolor=\color{codebg},
+  keywordstyle=\color{blue!60!black}\bfseries,
+  commentstyle=\color{green!40!black}\itshape,
+  stringstyle=\color{red!40!black},
+  showstringspaces=false,
+  breaklines=true,
+  language=Python,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em
+}
+\lstset{style=py}
+
+% Inline code
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+% Vectors and matrices
+\newcommand{\vw}{\mathbf{w}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vyhat}{\hat{\mathbf{y}}}
+
+\title{HW03 — Linear and Logistic Regression\\\large Specification}
+\author{Ramaz ML Course 2026}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document is the \textbf{contract} for HW03. It tells you exactly what to build,
+what each method must do, and the shape of the public API your code must match.
+The test suite checks this contract directly --- when your code matches the spec,
+the tests pass.
+
+\medskip
+\noindent
+\textbf{How to use this document:} Read it once end-to-end before opening
+\code{regression.py}. Then implement methods in roughly the order tests are written
+(unit tests first, then \code{fit}, then anything left). Refer back here whenever
+you forget a math formula or a return shape.
+
+\tableofcontents
+
+\section{Architecture overview}
+
+Both \code{LinearRegression} and \code{LogisticRegression} follow the same five-step loop:
+
+\begin{center}
+\begin{tabular}{ll}
+1. & \code{forward(X)} computes predictions $\vyhat$ from inputs $X$. \\
+2. & \code{loss(y\_pred, y\_true)} returns a scalar loss. \\
+3. & \code{gradient(X, y\_true, y\_pred)} returns $(dw, db)$. \\
+4. & Update step: $\vw \leftarrow \vw - \eta \cdot dw$,\quad $b \leftarrow b - \eta \cdot db$. \\
+5. & Repeat for \code{epochs} iterations.
+\end{tabular}
+\end{center}
+
+\noindent
+Your \code{fit(X, y, epochs)} method runs this loop \code{epochs} times and returns
+the list of loss values, one per epoch. Your \code{predict(X)} method returns the
+model's prediction for fresh data:
+
+\begin{itemize}
+    \item For linear regression, \code{predict(X)} \emph{is} the forward pass.
+    \item For logistic regression, \code{predict(X)} is a hard label ($0$ or $1$)
+          obtained by thresholding the forward pass's probability at $0.5$.
+\end{itemize}
+
+\section{Standalone helper: \texttt{sigmoid}}
+
+You must implement one free function before either class:
+
+\medskip\noindent
+\code{def sigmoid(z: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+A non-linear activation that squashes any real number into the
+interval $(0, 1)$. \code{LogisticRegression.forward} will apply this to a
+linear combination to turn it into a probability.
+
+\medskip\noindent
+Element-wise sigmoid:
+\[
+    \sigma(z) = \frac{1}{1 + e^{-z}}
+\]
+
+\noindent
+The output is always in the open interval $(0, 1)$, has the same shape as the
+input, and satisfies $\sigma(-z) = 1 - \sigma(z)$.
+
+\medskip
+\noindent
+\code{LogisticRegression.forward} will call this --- but do not call it from
+inside \code{LinearRegression.forward}.
+
+\section{LinearRegression}
+
+The required public API is described method-by-method below. Match each
+signature exactly --- the tests import the class and call these methods on
+instances of it.
+
+\subsection{\texttt{\_\_init\_\_}}
+
+\noindent
+\code{def \_\_init\_\_(self, n\_features: int, lr: float = 0.01) -> None}
+
+\medskip\noindent
+Set up a fresh model. Called once, when the user does
+\code{model = LinearRegression(n\_features=8)}. After this, the model has
+parameters initialized to zero but hasn't seen any data yet.
+
+\medskip\noindent
+Initialize:
+\begin{itemize}
+    \item \code{self.w} --- a 1-D tensor of zeros with shape \code{(n\_features,)},
+          dtype \code{torch.float32}.
+    \item \code{self.b} --- a scalar tensor (0-D) with value $0.0$, dtype
+          \code{torch.float32}.
+    \item \code{self.lr} --- store the learning rate as-is.
+\end{itemize}
+
+The grader reads \code{self.w} and \code{self.b} after \code{fit}, so use these
+exact attribute names.
+
+\subsection{\texttt{forward}}
+
+\noindent
+\code{def forward(self, X: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Step 1 of every training iteration. Take the current parameters
+and produce a prediction for each row of $X$. Also called at inference time
+(via \code{predict}) on new data.
+
+\medskip\noindent
+Compute the linear prediction:
+\[
+    \vyhat = X \vw + b
+\]
+
+\begin{itemize}
+    \item Input shape: \code{X} has shape \code{(n, d)} where
+          \code{d == self.w.shape[0]}.
+    \item Output shape: \code{(n,)}.
+\end{itemize}
+
+\subsection{\texttt{loss}}
+
+\noindent
+\code{def loss(self, y\_pred: torch.Tensor, y\_true: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Step 2 of every training iteration. Collapse the per-example
+prediction error into one scalar. The training loop tries to make this number
+smaller.
+
+\medskip\noindent
+Mean squared error:
+\[
+    \mathrm{MSE} = \frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)^2
+\]
+
+\begin{itemize}
+    \item Inputs: both shape \code{(n,)}.
+    \item Output: a 0-dimensional (scalar) tensor.
+\end{itemize}
+
+\subsection{\texttt{gradient}}
+
+\noindent
+\code{def gradient(self, X: torch.Tensor, y\_true: torch.Tensor, y\_pred: torch.Tensor)\\
+\hspace*{2em}-> tuple[torch.Tensor, torch.Tensor]}
+
+\medskip\noindent
+Step 3 of every training iteration. Figure out which direction
+to move each parameter to reduce the loss. The training loop will subtract a
+small multiple (\code{lr}) of these gradients from $\vw$ and $b$.
+
+\medskip\noindent
+Returns the gradients of the MSE loss with respect to $\vw$ and $b$. Use the
+formula derived in lecture (no \code{torch.autograd}, no \code{.backward()}):
+\[
+    \frac{\partial L}{\partial \vw} = \frac{2}{n}\, X^{\top} (\vyhat - \vy)
+    \qquad
+    \frac{\partial L}{\partial b} = \frac{2}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)
+\]
+
+\begin{itemize}
+    \item \code{dw} has shape \code{(d,)}.
+    \item \code{db} is a scalar tensor.
+\end{itemize}
+
+\subsection{\texttt{fit}}
+
+\noindent
+\code{def fit(self, X: torch.Tensor, y: torch.Tensor, epochs: int = 200) -> list[float]}
+
+\medskip\noindent
+Run the full training loop. This is the only method a normal
+user will call directly --- it orchestrates \code{forward}, \code{loss},
+\code{gradient}, and the parameter update step in sequence.
+
+\medskip\noindent
+Full-batch gradient descent. The algorithm:
+
+\begin{enumerate}
+    \item Initialize an empty history list.
+    \item Repeat for \code{epochs} iterations:
+    \begin{enumerate}
+        \item Compute predictions from the current parameters (call your own
+              \code{forward}).
+        \item Compute the loss between predictions and targets (call your own
+              \code{loss}).
+        \item Append the loss \emph{as a Python float} (not a tensor) to the
+              history.
+        \item Compute the gradients (call your own \code{gradient}).
+        \item Update parameters by stepping against the gradient:
+              $\vw \leftarrow \vw - \eta \cdot dw$,\quad
+              $b \leftarrow b - \eta \cdot db$.
+    \end{enumerate}
+    \item Return the history list.
+\end{enumerate}
+
+\begin{itemize}
+    \item Returns a \code{list[float]} of length exactly \code{epochs}.
+    \item After \code{fit} returns, \code{self.w} and \code{self.b} hold the
+          trained parameters.
+\end{itemize}
+
+\subsection{\texttt{predict}}
+
+\noindent
+\code{def predict(self, X: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Inference. Produce predictions on new data using the trained
+parameters. Tests call this after \code{fit} to evaluate model quality.
+
+\medskip\noindent
+For linear regression, \code{predict(X)} is identical to \code{forward(X)}.
+(It exists so that \code{LinearRegression} and \code{LogisticRegression} share
+a uniform inference API.)
+
+\subsection*{Invariants the tests will check}
+
+\begin{itemize}
+    \item For sufficiently small \code{lr}, \code{loss\_history} is non-increasing.
+    \item On data generated by $y = X w_{\text{true}} + b_{\text{true}} + \varepsilon$
+          with small $\varepsilon$, \code{fit} for enough epochs recovers
+          $w_{\text{true}}$ and $b_{\text{true}}$ to within tolerance.
+    \item \code{forward(X)} returns shape \code{(n,)}; \code{gradient} returns
+          \code{(dw, db)} with shapes \code{(d,)} and scalar; \code{predict(X)}
+          returns shape \code{(n,)}.
+\end{itemize}
+
+\section{LogisticRegression}
+
+The required public API is described method-by-method below. Match each
+signature exactly.
+
+\subsection{\texttt{\_\_init\_\_}}
+
+\noindent
+\code{def \_\_init\_\_(self, n\_features: int, lr: float = 0.5) -> None}
+
+\medskip\noindent
+Same as \code{LinearRegression.\_\_init\_\_} --- set up a fresh model.
+
+\medskip\noindent
+Same behavior as \code{LinearRegression.\_\_init\_\_}. Default \code{lr} is
+larger because the BCE gradient is on a smaller scale --- see Question 3 in
+the writeup.
+
+\subsection{\texttt{forward}}
+
+\noindent
+\code{def forward(self, X: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Step 1 of every training iteration. Produce a class-1
+probability for each input row.
+
+\medskip\noindent
+Probability of class~1:
+\[
+    \vyhat = \sigma(X \vw + b)
+\]
+
+Use the standalone \code{sigmoid} you implemented in §2.
+
+\begin{itemize}
+    \item Output shape: \code{(n,)}. All values lie strictly in $(0, 1)$.
+\end{itemize}
+
+\subsection{\texttt{loss}}
+
+\noindent
+\code{def loss(self, y\_pred: torch.Tensor, y\_true: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Step 2 of every training iteration. Measure prediction error for
+a binary classification problem. BCE penalizes confident wrong predictions
+much more than uncertain ones.
+
+\medskip\noindent
+Binary cross-entropy:
+\[
+    \mathrm{BCE}
+    = -\frac{1}{n} \sum_{i=1}^{n}
+        \big[
+            y_i \log \hat{y}_i + (1 - y_i) \log (1 - \hat{y}_i)
+        \big]
+\]
+
+\begin{itemize}
+    \item \code{y\_true} values are in $\{0, 1\}$ (encoded as floats).
+    \item \textbf{Numerical safety:} clamp \code{y\_pred} into
+          $[\varepsilon, 1 - \varepsilon]$ with $\varepsilon = 10^{-7}$ before
+          taking \code{log}. Otherwise $\log(0) = -\infty$ will blow up your loss.
+\end{itemize}
+
+\subsection{\texttt{gradient}}
+
+\noindent
+\code{def gradient(self, X: torch.Tensor, y\_true: torch.Tensor, y\_pred: torch.Tensor)\\
+\hspace*{2em}-> tuple[torch.Tensor, torch.Tensor]}
+
+\medskip\noindent
+Step 3 of every training iteration. Same purpose as the linear
+case --- decide which direction to move each parameter to reduce the loss.
+
+\medskip\noindent
+Same shape as the linear case, with the factor changed:
+\[
+    \frac{\partial L}{\partial \vw} = \frac{1}{n}\, X^{\top} (\vyhat - \vy)
+    \qquad
+    \frac{\partial L}{\partial b} = \frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)
+\]
+
+\noindent
+Why no factor of 2 here? See writeup Question 3 --- the sigmoid derivative
+cancels something in the BCE derivative. Lesson 4 has the full derivation.
+
+\subsection{\texttt{fit}}
+
+\noindent
+\code{def fit(self, X: torch.Tensor, y: torch.Tensor, epochs: int = 300) -> list[float]}
+
+\medskip\noindent
+Run the full training loop --- same orchestration as
+\code{LinearRegression.fit}.
+
+\medskip\noindent
+Same training loop as \code{LinearRegression.fit}. The defaults
+(\code{lr=0.5}, \code{epochs=300}) are tuned for the Iris classification dataset
+used in the analysis.
+
+\subsection{\texttt{predict\_proba}}
+
+\noindent
+\code{def predict\_proba(self, X: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Inference, soft version. Returns the probability of class 1
+without thresholding. Useful when callers want a confidence value.
+
+\medskip\noindent
+Returns the same thing as \code{forward(X)} --- a vector of probabilities in
+$(0, 1)$. This method exists so callers can read soft predictions without the
+threshold being applied.
+
+\subsection{\texttt{predict}}
+
+\noindent
+\code{def predict(self, X: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Inference, hard version. Returns the predicted class label
+($0$ or $1$) for each input.
+
+\medskip\noindent
+Apply the standard $0.5$ threshold:
+\[
+    y_i =
+    \begin{cases}
+        1 & \text{if } \hat{y}_i > 0.5 \\
+        0 & \text{otherwise}
+    \end{cases}
+\]
+
+\begin{itemize}
+    \item Output shape: \code{(n,)}, values in $\{0, 1\}$.
+    \item Output dtype should match \code{y\_true.dtype} (\code{float32} in our
+          datasets).
+\end{itemize}
+
+\subsection*{Invariants the tests will check}
+
+\begin{itemize}
+    \item \code{forward} outputs are strictly in $(0, 1)$.
+    \item For sufficiently small \code{lr}, \code{loss\_history} is non-increasing.
+    \item On linearly separable data, \code{predict} achieves $>95\%$ accuracy
+          after enough epochs.
+    \item \code{predict(X)} agrees with \code{(predict\_proba(X) > 0.5).float()}.
+\end{itemize}
+
+\section{Analysis (\texttt{analysis.py})}
+
+\code{analysis.py} contains four utility functions used by the test suite and
+by your final \code{analysis.py} run that produces plots for \code{writeup.md}.
+These are utility helpers --- the learning goal is the regression classes
+above, not data preprocessing --- so the spec names the sklearn entry points
+directly. Match the signatures exactly.
+
+\subsection{\texttt{load\_regression\_data}}
+
+\noindent
+\code{def load\_regression\_data() -> tuple[Tensor, Tensor, Tensor, Tensor]}
+
+\medskip\noindent
+Load the California Housing dataset and return train/test splits as float32
+tensors.
+
+\medskip\noindent
+Steps:
+\begin{enumerate}
+    \item Call \code{sklearn.datasets.fetch\_california\_housing()}.
+    \item Split with \code{sklearn.model\_selection.train\_test\_split(test\_size=0.2,
+          random\_state=42)}.
+    \item Standardize features: fit a \code{StandardScaler} on the training set
+          only, then transform both sets.
+    \item Convert all four arrays to \code{torch.Tensor} with
+          \code{dtype=torch.float32}.
+\end{enumerate}
+
+\noindent
+Return order: \code{(X\_train, X\_test, y\_train, y\_test)}. Shapes:
+\code{X\_train} is \code{(n\_train, 8)}, \code{X\_test} is \code{(n\_test, 8)},
+labels are 1-D.
+
+\subsection{\texttt{train\_linear\_model}}
+
+\noindent
+\code{def train\_linear\_model(X\_train: Tensor, y\_train: Tensor,\\
+\hspace*{2em}lr: float = 0.01, epochs: int = 200) -> tuple[LinearRegression, list[float]]}
+
+\medskip\noindent
+Thin wrapper: construct a fresh \code{LinearRegression} with
+\code{n\_features=X\_train.shape[1]} and the given \code{lr}, call its
+\code{fit} method for \code{epochs} epochs, and return
+\code{(model, loss\_history)}.
+
+\subsection{\texttt{load\_classification\_data}}
+
+\noindent
+\code{def load\_classification\_data() -> tuple[Tensor, Tensor, Tensor, Tensor]}
+
+\medskip\noindent
+Load a 2-class subset of the Iris dataset (setosa vs.\ versicolor), keeping
+only the first two features so the decision boundary can be plotted in 2D.
+
+\medskip\noindent
+Steps:
+\begin{enumerate}
+    \item Call \code{sklearn.datasets.load\_iris()}.
+    \item Filter to rows where \code{target < 2}; keep only the first two
+          feature columns.
+    \item Split with \code{train\_test\_split(test\_size=0.2, random\_state=42)}.
+    \item Standardize features (fit on train only).
+    \item Convert all four arrays to \code{float32} torch tensors.
+\end{enumerate}
+
+\noindent
+Labels are in $\{0, 1\}$ encoded as floats.
+
+\subsection{\texttt{train\_logistic\_model}}
+
+\noindent
+\code{def train\_logistic\_model(X\_train: Tensor, y\_train: Tensor,\\
+\hspace*{2em}lr: float = 0.5, epochs: int = 300) -> tuple[LogisticRegression, list[float]]}
+
+\medskip\noindent
+Same shape as \code{train\_linear\_model} --- construct a fresh
+\code{LogisticRegression}, call \code{fit}, return \code{(model, loss\_history)}.
+
+\section{How to read the test file}
+
+\code{test\_regression.py} is organized in three layers --- work on them in order:
+
+\subsection*{\texttt{@pytest.mark.unit} --- one method at a time}
+
+Each test class targets one piece of one class. Get these green first; they
+verify the math primitives independently (forward shapes, loss values,
+gradients matching the formula) without requiring a working training loop.
+
+\subsection*{\texttt{@pytest.mark.integration} --- \texttt{fit} end-to-end}
+
+Once unit tests pass, move on. Integration tests run a full \code{fit} on
+synthetic data and check that the loss decreases, that the recovered parameters
+are close to ground truth, and that \code{predict} produces sensible outputs.
+
+\subsection*{\texttt{@pytest.mark.analysis} --- \texttt{analysis.py} helpers}
+
+Tests for the four helper functions in \code{analysis.py} (data loading and
+training wrappers).
+
+\medskip
+\noindent
+Run a single layer with:
+
+\begin{lstlisting}[language=bash]
+uv run pytest -m unit         # just unit tests
+uv run pytest -m integration  # just integration
+uv run pytest -m analysis     # just analysis helpers
+\end{lstlisting}
+
+\section{Restrictions}
+
+\begin{itemize}
+    \item \textbf{No \code{torch.autograd}, no \code{.backward()}, no
+          \code{requires\_grad=True} anywhere in \code{regression.py}.} You are
+          computing every gradient by hand from the derivations in lecture. The
+          \code{conftest.py} fails the run if it detects autograd usage in your file.
+    \item \textbf{No \code{sklearn.linear\_model}.} Same reason --- implementing
+          logistic regression yourself is the point of the assignment.
+\end{itemize}
+
+\end{document}

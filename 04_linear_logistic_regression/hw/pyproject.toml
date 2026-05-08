@@ -1,0 +1,36 @@
+[project]
+name = "hw03-linear-logistic-regression"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.0",
+    "scikit-learn>=1.3",
+    "matplotlib>=3.7",
+    "numpy>=1.24",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-timeout>=2.3",
+    "ruff>=0.4",
+    "ty>=0.0.1a0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+markers = [
+    "unit: individual method tests (40 pts)",
+    "integration: full fit/predict end-to-end (30 pts)",
+    "analysis: analysis.py helpers (20 pts)",
+]
+addopts = "-v --tb=short --strict-markers"
+timeout = 30
