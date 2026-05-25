@@ -5,8 +5,9 @@ own folder (`00_python_bootcamp/`, `01_linear_algebra/`, …). Inside each modul
 `hw/` is the assignment and (where applicable) `exercises/` is the written
 problem set.
 
-You will work entirely in **GitHub Codespaces** (browser-based VS Code, no local
-installation needed) and submit on **Gradescope**.
+You'll work in **GitHub Codespaces** (recommended — browser-based VS Code, no
+local installation needed) or on your **local machine** (see below), and submit
+on **Gradescope**.
 
 ---
 
@@ -52,20 +53,50 @@ you haven't implemented anything yet.
 
 ---
 
+## Alternative: working on your local machine
+
+If you'd rather use your own computer, the workflow is the same but with a
+one-time local setup.
+
+1. **Fork** the repo (as in step 1 above).
+2. **Clone your fork:**
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/ramaz-ml-course-2026-student.git
+   cd ramaz-ml-course-2026-student
+   ```
+3. **Install Python 3.11+** if you don't already have it:
+   [python.org/downloads](https://www.python.org/downloads/).
+4. **Install `uv`** (the Python package manager the course uses):
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+   On Windows, see
+   [docs.astral.sh/uv/getting-started/installation](https://docs.astral.sh/uv/getting-started/installation/).
+5. **Open the folder in your editor** (VS Code, PyCharm, whatever you like) and
+   work from its terminal. The per-assignment `uv run pytest` and `uv run
+   python score.py` commands work identically to Codespaces.
+
+Everything else in this README (Sync fork, the two-submission Gradescope flow,
+Source Control for saving work) applies the same way locally.
+
+---
+
 ## Getting new assignments (during the year)
 
 The teacher releases new assignments by pushing them to the upstream repo. To
 pull them into your fork, click **Sync fork** at the top of your fork's page on
 GitHub. That's it — one click, no terminal command.
 
-Then, in your Codespace terminal:
+Then bring the changes into your working copy (Codespace or local) and install
+any new dependencies:
 
 ```bash
+git pull origin main
 bash setup.sh
 ```
 
-This pulls the latest changes into your Codespace and installs dependencies for
-any new assignment folders.
+In a Codespace, just run `bash setup.sh` — `git pull` is done for you by the
+sync.
 
 ---
 
