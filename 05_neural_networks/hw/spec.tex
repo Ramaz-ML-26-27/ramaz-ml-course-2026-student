@@ -1,0 +1,552 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+% Code style
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codebg}{RGB}{245,245,247}
+\lstdefinestyle{py}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0pt,
+  rulecolor=\color{codebg},
+  keywordstyle=\color{blue!60!black}\bfseries,
+  commentstyle=\color{green!40!black}\itshape,
+  stringstyle=\color{red!40!black},
+  showstringspaces=false,
+  breaklines=true,
+  language=Python,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em
+}
+\lstset{style=py}
+
+% Inline code
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\title{HW04 --- Neural Networks\\\large Specification}
+\author{Ramaz ML Course 2026}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+This document is the \textbf{contract} for HW04. It tells you exactly what to
+build, what each function and method must do, and the shape of the public API
+your code must match. The test suite checks this contract directly --- when
+your code matches the spec, the tests pass.
+
+\medskip
+\noindent
+\textbf{How to use this document:} Read it once end-to-end before opening
+any of the Python files. Then implement in roughly the order tests are
+written: \code{network.py} first (Dropout, then MLP), then
+\code{training.py}, then \code{analysis.py}. Refer back here whenever you
+forget a math formula or a return shape.
+
+\medskip
+\noindent
+All derivations referenced below live in the Lesson 5 LaTeX notes. The spec
+points to them rather than re-deriving everything.
+
+\tableofcontents
+
+% ===========================================================================
+\section{Architecture overview}
+% ===========================================================================
+
+HW04 has three implementation files plus an analysis script:
+
+\begin{center}
+\begin{tabular}{ll}
+\code{network.py}  & \code{Dropout} (custom nn.Module), \code{MLP} (configurable feedforward net) \\
+\code{training.py} & \code{train\_one\_epoch}, \code{validate}, \code{train} (orchestrator) \\
+\code{analysis.py} & \code{load\_fashion\_mnist}, \code{build\_model} (you implement);\\
+                   & teacher-provided \code{\_\_main\_\_} block runs the ablation
+\end{tabular}
+\end{center}
+
+\medskip
+\noindent
+You will implement everything in those three files \emph{above} the
+teacher-provided separator in \code{analysis.py}. The training run for Part 2
+of the assignment is handled by the \code{if \_\_name\_\_ == "\_\_main\_\_":}
+block in \code{analysis.py}, which is released as-is.
+
+\medskip
+\noindent
+The high-level flow is the canonical PyTorch training loop you saw in lecture:
+
+\begin{center}
+\begin{tabular}{ll}
+1. & \code{build\_model(config)} returns the model, optimizer, and (optional) scheduler. \\
+2. & \code{load\_fashion\_mnist} returns three \code{DataLoader}s. \\
+3. & \code{train(...)} loops over epochs, calling \code{train\_one\_epoch} \\
+   & and \code{validate}, applying early stopping, restoring the best snapshot. \\
+4. & The orchestration block plots curves and prints a results table.
+\end{tabular}
+\end{center}
+
+% ===========================================================================
+\section{\texttt{Dropout} (\texttt{network.py})}
+% ===========================================================================
+
+The first thing you implement. \code{Dropout} is a regularization layer that
+zeros activations at random during training, scaling the survivors so the
+expected activation is unchanged. At evaluation time it does nothing.
+
+\subsection{\texttt{\_\_init\_\_}}
+
+\noindent
+\code{def \_\_init\_\_(self, p: float) -> None}
+
+\medskip\noindent
+Construct a fresh \code{Dropout} layer with rate $p$. Subclass
+\code{torch.nn.Module}; remember to call \code{super().\_\_init\_\_()} before
+anything else.
+
+\medskip\noindent
+Store:
+\begin{itemize}
+    \item \code{self.p} --- the dropout probability, as-is.
+\end{itemize}
+
+The tests read \code{self.p} after construction, so use this exact attribute
+name. \code{p} must lie in $[0, 1)$. If \code{p == 0}, the layer is the
+identity in both modes.
+
+\subsection{\texttt{forward}}
+
+\noindent
+\code{def forward(self, x: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Apply (or skip) inverted dropout depending on the layer's mode. PyTorch sets
+\code{self.training} to \code{True} after \code{model.train()} and
+\code{False} after \code{model.eval()} --- read this flag inside
+\code{forward} to decide which branch to take.
+
+\medskip\noindent
+The \textbf{inverted-dropout} rule (see Lesson 5, Session B, Section
+``Dropout'' for the derivation):
+\[
+    \tilde{x}_i =
+    \begin{cases}
+        \dfrac{x_i}{1 - p} & \text{with probability } 1 - p \\
+        0 & \text{with probability } p
+    \end{cases}
+\]
+when \code{self.training} is \code{True} and $p > 0$; otherwise
+$\tilde{x} = x$ (the identity).
+
+\medskip\noindent
+The Bernoulli mask is sampled independently per element. Use
+\code{torch.rand\_like(x)} as the source of randomness; the autouse seed
+fixture in \code{conftest.py} makes this reproducible across test runs.
+
+\begin{itemize}
+    \item Input shape: arbitrary (Dropout is shape-preserving).
+    \item Output shape: identical to the input.
+    \item Expectation: $\mathbb{E}[\tilde{x}] = x$ across the random mask.
+\end{itemize}
+
+\subsection*{Invariants the tests will check}
+
+\begin{itemize}
+    \item In training mode, with $p = 0.3$ and a large input, the fraction
+          of zero entries in the output is approximately $0.3$.
+    \item In training mode, every non-zero entry equals $x_i / (1 - p)$.
+    \item In eval mode, \code{Dropout(x)} equals \code{x} exactly.
+    \item Switching back from \code{eval()} to \code{train()} restores
+          dropping behavior.
+    \item \code{Dropout} is an \code{nn.Module} subclass.
+\end{itemize}
+
+% ===========================================================================
+\section{\texttt{MLP} (\texttt{network.py})}
+% ===========================================================================
+
+A multi-layer perceptron with configurable depth, hidden widths, and two
+optional regularizers. The architecture is exactly the one in Lesson 5
+Session A.
+
+\subsection{\texttt{\_\_init\_\_}}
+
+\noindent
+\code{def \_\_init\_\_(self, input\_dim: int, hidden\_dims: list[int],}\\
+\code{\hspace*{2em}output\_dim: int, dropout\_p: float = 0.0, use\_batchnorm: bool = False) -> None}
+
+\medskip\noindent
+Subclass \code{nn.Module} (remember \code{super().\_\_init\_\_()}). Build the
+following architecture, in order:
+
+\begin{enumerate}
+    \item One \code{nn.Flatten} (so 2-D image inputs like FashionMNIST
+          collapse to a single feature dimension).
+    \item For each entry $h$ in \code{hidden\_dims}, in order:
+    \begin{enumerate}
+        \item A \code{nn.Linear} from the previous dimension to $h$.
+        \item If \code{use\_batchnorm} is \code{True}: an
+              \code{nn.BatchNorm1d(h)}.
+        \item An \code{nn.ReLU}.
+        \item If \code{dropout\_p > 0}: your custom \code{Dropout(p=dropout\_p)}.
+    \end{enumerate}
+    \item One final \code{nn.Linear} from the last hidden dimension to
+          \code{output\_dim}.
+\end{enumerate}
+
+The final layer produces \textbf{raw logits} --- do not apply softmax or any
+activation. The loss function (\code{nn.CrossEntropyLoss}) applies the
+softmax internally.
+
+\medskip\noindent
+Register the layers as submodules so that \code{model.parameters()} returns
+all of them. The simplest way is to wrap everything in an
+\code{nn.Sequential} and store it as an attribute.
+
+\subsection{\texttt{forward}}
+
+\noindent
+\code{def forward(self, x: torch.Tensor) -> torch.Tensor}
+
+\medskip\noindent
+Run \code{x} through every layer in order: \code{nn.Flatten}, then the
+hidden blocks, then the final linear projection. Return the resulting logit
+tensor.
+
+\begin{itemize}
+    \item Input shape: \code{(B, 1, 28, 28)} for FashionMNIST, but the
+          method must accept any input that \code{nn.Flatten} reduces to
+          shape \code{(B, input\_dim)}.
+    \item Output shape: \code{(B, output\_dim)}.
+\end{itemize}
+
+\subsection*{Invariants the tests will check}
+
+\begin{itemize}
+    \item \code{MLP} is an \code{nn.Module} subclass.
+    \item Layer counts match the architecture above:
+    \begin{itemize}
+        \item Exactly one \code{nn.Flatten}.
+        \item \code{len(hidden\_dims) + 1} \code{nn.Linear} layers.
+        \item \code{len(hidden\_dims)} \code{nn.ReLU} layers.
+        \item \code{len(hidden\_dims)} \code{nn.BatchNorm1d} layers when
+              \code{use\_batchnorm}, zero otherwise.
+        \item \code{len(hidden\_dims)} \code{Dropout} layers when
+              \code{dropout\_p > 0}, zero otherwise.
+    \end{itemize}
+    \item Each \code{nn.Linear}'s \code{in\_features} / \code{out\_features}
+          match the adjacent dimensions.
+    \item \code{forward} produces \code{(B, output\_dim)} for inputs of
+          shape \code{(B, 1, 28, 28)}, for $B \in \{1, 4, 32\}$.
+\end{itemize}
+
+% ===========================================================================
+\section{\texttt{train\_one\_epoch} (\texttt{training.py})}
+% ===========================================================================
+
+\noindent
+\code{def train\_one\_epoch(model: nn.Module, loader: DataLoader,}\\
+\code{\hspace*{2em}criterion: nn.Module, optimizer: torch.optim.Optimizer,}\\
+\code{\hspace*{2em}device: torch.device | str) -> float}
+
+\medskip\noindent
+Run one full pass over \code{loader}, updating model parameters. Return the
+mean per-example training loss across the epoch.
+
+\medskip\noindent
+Algorithm (one iteration of the standard PyTorch training loop):
+
+\begin{enumerate}
+    \item Switch the model to training mode (so \code{Dropout} and
+          \code{BatchNorm1d} behave correctly).
+    \item For each \code{(x, y)} batch in \code{loader}:
+    \begin{enumerate}
+        \item Move the batch tensors onto \code{device}.
+        \item Zero the optimizer's accumulated gradients.
+        \item Feed the batch through the model to obtain its logit predictions.
+        \item Compute the scalar loss with \code{criterion}.
+        \item Run the backward pass on the loss.
+        \item Step the optimizer.
+        \item Accumulate the loss (weighted by batch size) for the
+              epoch-mean.
+    \end{enumerate}
+    \item Return the loss totalled across all examples, divided by the
+          number of examples.
+\end{enumerate}
+
+\begin{itemize}
+    \item Return value is a Python \code{float}, not a tensor.
+    \item Order of operations: zero-grad before forward, step after
+          backward. Reversing these silently breaks training.
+\end{itemize}
+
+% ===========================================================================
+\section{\texttt{validate} (\texttt{training.py})}
+% ===========================================================================
+
+\noindent
+\code{def validate(model: nn.Module, loader: DataLoader, criterion: nn.Module,}\\
+\code{\hspace*{2em}device: torch.device | str) -> tuple[float, float]}
+
+\medskip\noindent
+Evaluate the model on \code{loader} without updating parameters. Return
+\code{(loss, accuracy)} as Python floats.
+
+\medskip\noindent
+Algorithm:
+
+\begin{enumerate}
+    \item Switch the model to eval mode (so \code{Dropout} is the identity
+          and \code{BatchNorm1d} uses its running statistics).
+    \item Open a \code{torch.no\_grad()} context (prevents PyTorch from
+          building the computation graph; saves memory and time).
+    \item For each \code{(x, y)} batch in \code{loader}:
+    \begin{enumerate}
+        \item Move the batch tensors onto \code{device}.
+        \item Feed the batch through the model to obtain logits.
+        \item Compute the loss with \code{criterion}.
+        \item Take the argmax of the logits along the class dimension to
+              get a predicted class index per example.
+        \item Accumulate the loss (weighted by batch size) and the count
+              of correct predictions.
+    \end{enumerate}
+    \item Return the mean loss and the mean accuracy across all examples
+          as a two-tuple.
+\end{enumerate}
+
+\begin{itemize}
+    \item Both return values are Python \code{float}s.
+    \item Accuracy is always in $[0, 1]$.
+    \item The function must \textbf{not} modify the model parameters.
+\end{itemize}
+
+% ===========================================================================
+\section{\texttt{train} (\texttt{training.py})}
+% ===========================================================================
+
+\noindent
+\code{def train(model: nn.Module, train\_loader: DataLoader, val\_loader: DataLoader,}\\
+\code{\hspace*{2em}optimizer: torch.optim.Optimizer, criterion: nn.Module,}\\
+\code{\hspace*{2em}max\_epochs: int, patience: int, device: torch.device | str,}\\
+\code{\hspace*{2em}scheduler: torch.optim.lr\_scheduler.LRScheduler | None = None) -> dict}
+
+\medskip\noindent
+The full training orchestrator. Runs the train/validate cycle, drives the
+optional LR scheduler, applies inline early stopping, keeps the
+best-validation parameters in memory, and restores them before returning.
+
+\medskip\noindent
+Algorithm:
+
+\begin{enumerate}
+    \item Initialize:
+    \begin{itemize}
+        \item An empty history dict with keys \code{train\_loss},
+              \code{val\_loss}, \code{val\_acc}, \code{best\_epoch}. The
+              first three start as empty lists; \code{best\_epoch} starts
+              at $0$.
+        \item A best-loss-so-far variable, set to $+\infty$.
+        \item A deep copy of the current \code{model.state\_dict()} as the
+              best snapshot.
+        \item An ``epochs since improvement'' counter, set to $0$.
+    \end{itemize}
+    \item For epoch $= 0$ up to \code{max\_epochs - 1}:
+    \begin{enumerate}
+        \item Call \code{train\_one\_epoch}; append the returned loss to
+              \code{history['train\_loss']}.
+        \item Call \code{validate}; append the loss and accuracy to
+              \code{history['val\_loss']} and \code{history['val\_acc']}.
+        \item If \code{scheduler is not None}, call \code{scheduler.step()}.
+        \item If the new val loss is strictly less than the best-so-far:
+              update best, deep-copy \code{model.state\_dict()} as the new
+              best snapshot, set \code{history['best\_epoch']} to the
+              current epoch, reset the counter to $0$.
+        \item Otherwise: increment the counter. If it reaches
+              \code{patience}, break out of the loop (early stop).
+    \end{enumerate}
+    \item Restore the best snapshot via \code{model.load\_state\_dict(...)}.
+    \item Return the history dict.
+\end{enumerate}
+
+\medskip\noindent
+\textbf{Deep copy matters.} \code{model.state\_dict()} returns a \emph{view}
+of the current parameters; if you assign it directly to your ``best''
+variable, that view will be updated on every subsequent gradient step
+(meaning ``best'' tracks the latest, not the best). Use \code{copy.deepcopy}
+on the state dict.
+
+\begin{itemize}
+    \item Return type: \code{dict} with the four keys above. \code{train\_loss},
+          \code{val\_loss}, \code{val\_acc} are \code{list[float]} of equal
+          length. \code{best\_epoch} is an \code{int}.
+    \item If early stopping does not trigger, the lists have length
+          \code{max\_epochs}.
+    \item After \code{train} returns, the model's parameters reflect the
+          best-validation epoch, not the last epoch.
+\end{itemize}
+
+% ===========================================================================
+\section{Analysis helpers (\texttt{analysis.py})}
+% ===========================================================================
+
+\code{analysis.py} contains two helper functions that the teacher-provided
+\code{\_\_main\_\_} block uses to run the ablation study. The \code{\_\_main\_\_}
+block itself is released as-is below the marked separator --- do not modify
+it. Match the helper signatures exactly.
+
+\subsection{\texttt{load\_fashion\_mnist}}
+
+\noindent
+\code{def load\_fashion\_mnist(batch\_size: int = 128)}\\
+\code{\hspace*{2em}-> tuple[DataLoader, DataLoader, DataLoader]}
+
+\medskip\noindent
+Load FashionMNIST and return train, val, and test \code{DataLoader}s as a
+three-tuple. This is a utility helper, so the spec names the relevant
+library entry points directly.
+
+\medskip\noindent
+Steps:
+\begin{enumerate}
+    \item Build a transform pipeline of \code{transforms.ToTensor()} followed
+          by \code{transforms.Normalize((0.2860,), (0.3530,))} (the
+          FashionMNIST channel mean and std).
+    \item Load \code{torchvision.datasets.FashionMNIST(root="./data",
+          train=True, download=True, transform=transform)}.
+    \item Compute split sizes: $80\%$ for training, $10\%$ for validation,
+          $10\%$ for test, using integer multiplication on the total length.
+          The remainder (if any) goes to the test split.
+    \item Build a \code{torch.Generator().manual\_seed(42)} so the split is
+          reproducible across runs.
+    \item Call \code{torch.utils.data.random\_split} with the three sizes
+          and the generator to split the dataset.
+    \item Wrap each split in a \code{DataLoader} with the given
+          \code{batch\_size}. Shuffle the train loader; leave val and test
+          unshuffled. Use \code{num\_workers=0}.
+\end{enumerate}
+
+\noindent
+Return order: \code{(train\_loader, val\_loader, test\_loader)}. The split
+sizes for the FashionMNIST training set of 60,000 examples are
+$48000 / 6000 / 6000$.
+
+\subsection{\texttt{build\_model}}
+
+\noindent
+\code{def build\_model(config: str)}\\
+\code{\hspace*{2em}-> tuple[nn.Module, torch.optim.Optimizer,}\\
+\code{\hspace*{2em}~~~~torch.optim.lr\_scheduler.LRScheduler | None]}
+
+\medskip\noindent
+Assemble the model, optimizer, and (optional) scheduler trio for one of the
+four ablation configurations. The shared architecture is:
+\code{MLP(input\_dim=784, hidden\_dims=[256, 128], output\_dim=10, ...)};
+constants \code{INPUT\_DIM}, \code{HIDDEN\_DIMS}, \code{OUTPUT\_DIM} are
+defined at the top of \code{analysis.py}.
+
+\medskip\noindent
+The four valid \code{config} values and what they each build:
+
+\begin{center}
+\begin{tabular}{lcccc}
+\code{config}  & \code{dropout\_p} & \code{use\_batchnorm} & \code{weight\_decay} & scheduler \\
+\hline
+\code{"baseline"}      & 0.0 & False & 0       & None \\
+\code{"dropout"}       & 0.3 & False & 0       & None \\
+\code{"batchnorm"}     & 0.0 & True  & 0       & None \\
+\code{"both\_schedule"} & 0.3 & True  & $10^{-4}$ & StepLR \\
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+For all four configs, use \code{torch.optim.SGD} with \code{lr=0.1}. When a
+scheduler is requested (\code{"both\_schedule"} only), use
+\code{torch.optim.lr\_scheduler.StepLR(optimizer, step\_size=10, gamma=0.5)}.
+For an unknown \code{config} string, raise a \code{ValueError}.
+
+\begin{itemize}
+    \item Return order: \code{(model, optimizer, scheduler)}, with
+          \code{scheduler} being \code{None} when not applicable.
+    \item All three configurations without a scheduler must return
+          \code{None} for the third element --- not a no-op object.
+\end{itemize}
+
+% ===========================================================================
+\section{How to read the test file}
+% ===========================================================================
+
+\code{test\_network.py} is organized in three layers --- work on them in order:
+
+\subsection*{\texttt{@pytest.mark.unit} --- one piece at a time (35 pts)}
+
+Per-method correctness for \code{Dropout} and \code{MLP}. Get these green
+first; they verify the building blocks of \code{network.py} independently
+of any training.
+
+\subsection*{\texttt{@pytest.mark.integration} --- training pipelines (30 pts)}
+
+End-to-end behavior for \code{train\_one\_epoch}, \code{validate}, and
+\code{train}. These tests use tiny synthetic datasets so they run in seconds.
+
+\subsection*{\texttt{@pytest.mark.analysis} --- analysis helpers (35 pts)}
+
+Tests for \code{load\_fashion\_mnist} (correct splits, shapes, dtypes) and
+\code{build\_model} (each of the four configs returns the right architecture
+and optimizer settings). The first run will download FashionMNIST
+(~30 MB); subsequent runs use the cache in \code{./data/}.
+
+\medskip
+\noindent
+Run a single layer with:
+
+\begin{lstlisting}[language=bash]
+uv run pytest -m unit         # just unit tests
+uv run pytest -m integration  # just integration tests
+uv run pytest -m analysis     # just analysis tests
+\end{lstlisting}
+
+\medskip
+\noindent
+Each test class is \textbf{all-or-nothing} --- every test in a class must
+pass to earn the points for that class.
+
+% ===========================================================================
+\section{Restrictions}
+% ===========================================================================
+
+\begin{itemize}
+    \item \textbf{No \code{torch.nn.Dropout}} anywhere in \code{network.py}.
+          Implementing dropout from scratch is the substantive learning goal
+          of §2. The \code{conftest.py} parses your source with \code{ast}
+          and fails the run if it finds any reference to \code{nn.Dropout},
+          \code{torch.nn.Dropout}, or \code{from torch.nn import Dropout}.
+    \item \textbf{No \code{sklearn.neural\_network}.} Build the MLP from
+          \code{torch.nn} primitives.
+\end{itemize}
+
+You \emph{may} use freely:
+\begin{itemize}
+    \item \code{torch.autograd}, \code{loss.backward()}, \code{.requires\_grad}
+          --- this is the first assignment where these are allowed.
+    \item \code{nn.Linear}, \code{nn.ReLU}, \code{nn.BatchNorm1d},
+          \code{nn.Flatten}, \code{nn.Sequential}.
+    \item \code{torch.optim.SGD}, \code{torch.optim.lr\_scheduler.StepLR}.
+    \item \code{torch.utils.data.DataLoader}, \code{torch.utils.data.random\_split}.
+    \item \code{torchvision.datasets.FashionMNIST}, \code{torchvision.transforms}.
+\end{itemize}
+
+\end{document}
